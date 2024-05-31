@@ -15,7 +15,9 @@ if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 
 def login(username, password):
-    response = requests.post("https://backhome-gs1u.onrender.com/login", json={'username': username, 'password': password})
+    #response = requests.post("https://backhome-gs1u.onrender.com/login", json={'username': username, 'password': password})
+    response = requests.post("http://localhost:5000/login", json={'username': username, 'password': password})
+
     if response.status_code == 200:
         st.session_state.logged_in = True
         st.session_state.username = username
@@ -39,11 +41,8 @@ if not st.session_state.logged_in:
 
 else:
     # Gestion de la navigation
-    page = st.sidebar.selectbox("Choisissez la page", ["Prédiction", "Détails de la Requête", "Historique des Requêtes"])
+    page = st.sidebar.selectbox("Choisissez la page", ["Prédiction", "Informations sur les Tables", "Historique des Requêtes"])
     st.sidebar.button("Se déconnecter", on_click=logout)
-
-  
-
 
     if page == "Prédiction":
         st.title(":classical_building: Prédiction de solvabilité")
@@ -60,51 +59,30 @@ else:
 
             st.subheader("Nombre d'enfants")
             CNT_CHILDREN = st.number_input("Nombre d'enfants", min_value=0, max_value=10, step=1)
-            st.write("Nombre d'enfants", CNT_CHILDREN)
 
             st.subheader('Revenus total')
             AMT_INCOME_TOTAL = st.number_input("Revenus total", min_value=0, max_value=1000000000)
-            st.write("Revenu total", AMT_INCOME_TOTAL)
 
             st.subheader('Montant Credit')
             AMT_CREDIT_x = st.number_input("Montant du crédit", min_value=1000, max_value=1000000000)
-            st.write("Montant du crédit", AMT_CREDIT_x)
 
             st.subheader('Période de crédit')
             periode_credit = st.number_input("Période de crédit", min_value=1, max_value=60, step=1)
-            st.write("Période de crédit", periode_credit)
 
             st.subheader('Annuité')
             AMT_ANNUITY_x = AMT_CREDIT_x / periode_credit
-            st.write("Montant de l'annuité", AMT_ANNUITY_x)
 
             st.subheader('Montant bien voulu')
             AMT_GOODS_PRICE = st.number_input("Montant bien voulu", min_value=1000.0, max_value=100000000.0, step=500.0)
-            st.write("Montant du bien voulu", AMT_GOODS_PRICE)
 
             st.subheader('Âge')
             DAYS_BIRTH = st.number_input("Âge client", min_value=18, max_value=90, step=1)
-            st.write("Âge", DAYS_BIRTH)
 
             st.subheader('Ancienneté professionnelle')
             DAYS_EMPLOYED = st.number_input("Ancienneté professionnelle", min_value=0, max_value=50, step=1)
-            st.write("Ancienneté professionnelle", DAYS_EMPLOYED)
-
-           # st.subheader("Famille")
-           # CNT_FAM_MEMBERS = st.number_input("Membre foyer", min_value=0, max_value=10, step=1)
-           # st.write("Nombre de personnes dans le foyer", CNT_FAM_MEMBERS)
 
             st.subheader("COT1")
             EXT_SOURCE_1 = st.number_input("COT1", min_value=0.0, max_value=1.0, step=0.001)
-            st.write("COT1", EXT_SOURCE_1)
-
-            #st.subheader("COT2")
-            #EXT_SOURCE_2 = st.number_input("COT2", min_value=0.0, max_value=1.0, step=0.001)
-            #st.write("COT2", EXT_SOURCE_2)
-
-           # st.subheader("COT3")
-           # EXT_SOURCE_3 = st.number_input("COT3", min_value=0.00000, max_value=1.00000, step=0.00001)
-           # st.write("COT3", EXT_SOURCE_3)
 
             submit_button = st.form_submit_button(label='Prédire')
 
@@ -120,20 +98,11 @@ else:
                 'AMT_GOODS_PRICE': AMT_GOODS_PRICE,
                 'DAYS_BIRTH': DAYS_BIRTH,
                 'DAYS_EMPLOYED': DAYS_EMPLOYED,
-                #'CNT_FAM_MEMBERS': CNT_FAM_MEMBERS,
-                'EXT_SOURCE_1': EXT_SOURCE_1,
-                #'EXT_SOURCE_2': EXT_SOURCE_2,
-                #'EXT_SOURCE_3': EXT_SOURCE_3
+                'EXT_SOURCE_1': EXT_SOURCE_1
             }
 
-            # Afficher la requête JSON envoyée
-            st.session_state.request_data = data
-
-            response = requests.post("https://backhome-gs1u.onrender.com/predict", json=data)
+            response = requests.post("http://localhost:5000/predict", json=data)
             result = response.json()
-
-            # Afficher la réponse JSON reçue
-            st.session_state.response_data = result
 
             col1, col2 = st.columns(2)
 
@@ -150,28 +119,34 @@ else:
                     prediction_text = "Crédit refusé"
                     st.error(prediction_text)
 
-    elif page == "Détails de la Requête":
-        st.title("Détails de la Requête et de la Réponse")
+    elif page == "Informations sur les Tables":
+        st.title("Informations sur les Tables")
 
-        if 'request_data' in st.session_state:
-            st.subheader("Requête JSON envoyée")
-            st.json(st.session_state.request_data)
-        else:
-            st.warning("Aucune requête envoyée.")
+        # Récupérer les informations sur les tables
+        response = requests.get("http://localhost:5000/table_info")
+        if response.status_code == 200:
+            tables_info = response.json()
 
-        if 'response_data' in st.session_state:
-            st.subheader("Réponse JSON reçue")
-            st.json(st.session_state.response_data)
+            for table_name, table_info in tables_info.items():
+                st.subheader(f"Informations sur la table {table_name}")
+                st.write(f"Nombre de lignes : {table_info['rows']}")
+                st.write(f"Nombre de colonnes : {table_info['columns']}")
+                
+                st.write(f"10 premières lignes de la table {table_name}:")
+                df = pd.DataFrame(table_info['data'][:10], columns=table_info['columns_names'])
+                st.dataframe(df)
         else:
-            st.warning("Aucune réponse reçue.")
+            st.error("Erreur lors de la récupération des informations sur les tables.")
+
+
 
     elif page == "Historique des Requêtes":
         st.title("Historique des Requêtes")
 
-        response = requests.get("https://backhome-gs1u.onrender.com/requests")
+        response = requests.get("http://localhost:5000/requests")
         if response.status_code == 200:
             requests_data = response.json()
-            df = pd.DataFrame(requests_data, columns=['ID', 'Request Data', 'Prediction', 'Decision'])
+            df = pd.DataFrame(requests_data, columns=['ID', 'Type de contrat', 'Véhiculé', 'Patrimoine', 'Nombre d\'enfants', 'Revenus total', 'Montant Credit', 'Période de crédit', 'Montant bien voulu', 'Âge', 'Ancienneté professionnelle', 'COT1', 'Prediction', 'Decision'])
             st.dataframe(df)
         else:
             st.error("Erreur lors de la récupération des données.")
