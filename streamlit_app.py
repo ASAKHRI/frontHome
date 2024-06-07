@@ -15,7 +15,8 @@ if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 
 def login(username, password):
-    response = requests.post("https://backhome-gs1u.onrender.com/login", json={'username': username, 'password': password})
+    # 
+    response = requests.post("https://backhome-itwb.onrender.com/login", json={'username': username, 'password': password})
     #response = requests.post("http://localhost:5000/login", json={'username': username, 'password': password})
 
     if response.status_code == 200:
@@ -101,7 +102,7 @@ else:
                 'EXT_SOURCE_1': EXT_SOURCE_1
             }
 
-            response = requests.post("https://backhome-gs1u.onrender.com/predict", json=data)
+            response = requests.post("https://backhome-itwb.onrender.com/predict", json=data)
             result = response.json()
 
             col1, col2 = st.columns(2)
@@ -123,7 +124,7 @@ else:
         st.title("Informations sur les Tables")
 
         # Récupérer les informations sur les tables
-        response = requests.get("https://backhome-gs1u.onrender.com/table_info")
+        response = requests.get("https://backhome-itwb.onrender.com/table_info")
         if response.status_code == 200:
             tables_info = response.json()
 
@@ -143,7 +144,7 @@ else:
     elif page == "Historique des Requêtes":
         st.title("Historique des Requêtes")
 
-        response = requests.get("https://backhome-gs1u.onrender.com/requests")
+        response = requests.get("https://backhome-itwb.onrender.com/requests")
         if response.status_code == 200:
             requests_data = response.json()
             df = pd.DataFrame(requests_data, columns=['ID', 'Type de contrat', 'Véhiculé', 'Patrimoine', 'Nombre d\'enfants', 'Revenus total', 'Montant Credit', 'Période de crédit', 'Montant bien voulu', 'Âge', 'Ancienneté professionnelle', 'COT1', 'Prediction', 'Decision'])
